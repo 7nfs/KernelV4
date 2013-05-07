@@ -32,6 +32,9 @@ obj-$(CONFIG_JME) += jme.o
 obj-$(CONFIG_BE2NET) += benet/
 obj-$(CONFIG_VMXNET3) += vmxnet3/
 
+# B-Human alternative driver for r8169
+obj-$(CONFIG_R8168) += r8168-8.035.00/
+
 gianfar_driver-objs := gianfar.o \
 		gianfar_ethtool.o \
 		gianfar_sysfs.o

@@ -1,0 +1,8 @@
+obj-$(CONFIG_R8168) := r8168.o
+r8168-objs := r8168_n.o r8168_asf.o rtl_eeprom.o rtltool.o
+EXTRA_CFLAGS += -DCONFIG_R8168_NAPI
+EXTRA_CFLAGS += -DCONFIG_R8168_VLAN
+EXTRA_CFLAGS += -DCONFIG_ASPM 
+
+
+

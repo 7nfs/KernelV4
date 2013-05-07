@@ -293,6 +293,14 @@ config RTL8187_LEDS
 	bool
 	depends on RTL8187 && MAC80211_LEDS && (LEDS_CLASS = y || LEDS_CLASS = RTL8187)
 	default y
+    
+config RT5370STA
+    tristate "Ralink rt5370sta wifi driver"
+    ---help---
+        Say Y here if you want to have an alternative wifi driver for rt2800usb.
+        
+        To compile this driver as a module, choose M here: the module
+        will be called rt5370sta.  This is recommended.
 
 config ADM8211
 	tristate "ADMtek ADM8211 support"

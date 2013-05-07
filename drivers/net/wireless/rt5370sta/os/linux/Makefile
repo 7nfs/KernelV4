@@ -1,0 +1,70 @@
+WFLAGS := -DAGGREGATION_SUPPORT -DPIGGYBACK_SUPPORT -DWMM_SUPPORT  -DLINUX -Wall -Wstrict-prototypes -Wno-trigraphs  -DSYSTEM_LOG_SUPPORT  -DRT28xx_MODE=STA -DCHIPSET=5370 -DRESOURCE_PRE_ALLOC -DCONFIG_STA_SUPPORT -DDBG -DWPA_SUPPLICANT_SUPPORT -DNATIVE_WPA_SUPPLICANT_SUPPORT -DRALINK_ATE -DCONFIG_RT2880_ATE_CMD_NEW -DRALINK_QA -DDOT11_N_SUPPORT -DLED_CONTROL_SUPPORT -DRTMP_MAC_USB -DRT30xx -DRT33xx -DRT3070 -DRT3370 -DRT5370 -DRTMP_USB_SUPPORT -DRTMP_TIMER_TASK_SUPPORT -DRTMP_RF_RW_SUPPORT -DRTMP_EFUSE_SUPPORT -DRTMP_INTERNAL_TX_ALC -DhSPECIFIC_BCN_BUF_SUPPORT -DRTMP_FREQ_CALIBRATION_SUPPORT -DSPECIFIC_VCORECAL_SUPPORT
+EXTRA_CFLAGS := $(WFLAGS) -I$(shell pwd)/drivers/net/wireless/rt5370sta/include
+
+obj-$(CONFIG_RT5370STA) := rt5370sta.o
+
+rt5370sta-objs := \
+	../../common/crypt_md5.o\
+	../../common/crypt_sha2.o\
+	../../common/crypt_hmac.o\
+	../../common/crypt_aes.o\
+	../../common/crypt_arc4.o\
+	../../common/mlme.o\
+	../../common/cmm_wep.o\
+	../../common/action.o\
+	../../common/cmm_data.o\
+	../../common/rtmp_init.o\
+	../../common/rtmp_init_inf.o\
+	../../common/cmm_tkip.o\
+	../../common/cmm_aes.o\
+	../../common/cmm_sync.o\
+	../../common/eeprom.o\
+	../../common/cmm_sanity.o\
+	../../common/cmm_info.o\
+	../../common/cmm_cfg.o\
+	../../common/cmm_wpa.o\
+	../../common/dfs.o\
+	../../common/spectrum.o\
+	../../common/rtmp_timer.o\
+	../../common/rt_channel.o\
+	../../common/cmm_profile.o\
+	../../common/cmm_asic.o\
+	../../common/cmm_cmd.o\
+	../../os/linux/rt_profile.o\
+	../../chips/rtmp_chip.o\
+	../../sta/assoc.o\
+	../../sta/auth.o\
+	../../sta/auth_rsp.o\
+	../../sta/sync.o\
+	../../sta/sanity.o\
+	../../sta/rtmp_data.o\
+	../../sta/connect.o\
+	../../sta/wpa.o\
+	../../sta/ags.o\
+	../../sta/sta_cfg.o\
+	../../common/rt_os_util.o\
+	../../os/linux/sta_ioctl.o\
+	../../os/linux/rt_linux.o\
+	../../os/linux/rt_main_dev.o\
+	../../common/ba_action.o\
+	../../common/rt_led.o\
+	../../common/cmm_mac_usb.o\
+	../../common/rtusb_io.o\
+	../../common/rtusb_data.o\
+	../../common/cmm_data_usb.o\
+	../../common/rtusb_bulk.o\
+	../../common/ee_prom.o\
+	../../common/ee_efuse.o\
+	../../common/rtmp_mcu.o\
+	../../common/rt_rf.o\
+	../../os/linux/rt_usb.o\
+	../../common/frq_cal.o\
+	../../chips/rt3070.o\
+	../../chips/rt30xx.o\
+	../../chips/rt33xx.o\
+	../../chips/rt3370.o\
+	../../chips/rt5390.o\
+	../../common/rtusb_dev_id.o\
+	../../os/linux/rt_usb_util.o\
+	../../os/linux/usb_main_dev.o\
+	../../common/rt_ate.o

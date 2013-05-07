@@ -3,9 +3,12 @@
  *
  * Copyright 2011 Aldebaran Robotics  Written
  * by Joseph Pinkasfeld with substantial inspiration from ov7670 code.
- *
+ * 
+ *  Authors:
  *  joseph pinkasfeld <joseph.pinkasfeld@gmail.com>
  *  Ludovic SMAL <lsmal@aldebaran-robotics.com>
+ *  Corentin Le Molgat <clemolgat@aldebaran-robotics.com>
+ *  Arne Böckmann <arneboe@tzi.de>
  *
  * This file may be distributed under the terms of the GNU General
  * Public License, version 2.
@@ -21,7 +24,7 @@
 #include <media/v4l2-i2c-drv.h>
 
 
-MODULE_AUTHOR("Joseph Pinkasfeld <joseph.pinkasfeld@gmail.com>;Ludovic SMAL <lsmal@aldebaran-robotics.com>, Corentin Le Molgat <clemolgat@aldebaran-robotics.com>");
+MODULE_AUTHOR("Joseph Pinkasfeld <joseph.pinkasfeld@gmail.com>;Ludovic SMAL <lsmal@aldebaran-robotics.com>, Corentin Le Molgat <clemolgat@aldebaran-robotics.com>, Arne Böckmann <arneboe@tzi.de>");
 MODULE_DESCRIPTION("A low-level driver for Aptina MT9M114 sensors");
 MODULE_LICENSE("GPL");
 
@@ -30,9 +33,9 @@ module_param(debug, bool, 0644);
 MODULE_PARM_DESC(debug, "Debug level (0-1)");
 
 #define dprintk(level, name,  fmt, arg...)\
-  do { if (debug >= level)\
-    printk(KERN_DEBUG "%s/0: " fmt, name, ## arg);\
-  } while (0)
+    do { \
+  printk(KERN_DEBUG "%s/0: " fmt, name, ## arg);\
+    } while (0)
 
 /*
  * Basic window sizes.  These probably belong somewhere more globally
@@ -81,9 +84,9 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
 #define REG_LOGICAL_ADDRESS_ACCESS                0x098E
 #define MCU_VARIABLE_DATA0                        0x0990
 #define MCU_VARIABLE_DATA1                        0x0992
-#define REG_RESET_REGISTER                        0x301A
-#define REG_DAC_TXLO_ROW                          0x316A
-#define REG_DAC_TXLO                              0x316C
+#define REG_RESET_REGISTER                        0x301A  
+#define REG_DAC_TXLO_ROW                          0x316A 
+#define REG_DAC_TXLO                              0x316C 
 #define REG_DAC_LD_4_5                            0x3ED0
 #define REG_DAC_LD_6_7                            0x3ED2
 #define REG_DAC_ECL                               0x316E
@@ -91,28 +94,36 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
 #define REG_SAMP_COL_PUP2                         0x3E14
 #define REG_COLUMN_CORRECTION                     0x30D4
 #define REG_LL_ALGO                               0xBC04
-#define   LL_EXEC_DELTA_DK_CORRECTION             0x0200
-#define REG_CAM_SYSCTL_PLL_ENABLE                 0xC97E
+#define LL_EXEC_DELTA_DK_CORRECTION               0x0200
+#define REG_CAM_DGAIN_RED                         0xC840
+#define REG_CAM_DGAIN_GREEN_1                     0xC842
+#define REG_CAM_DGAIN_GREEN_2                     0xC844
+#define REG_CAM_DGAIN_BLUE                        0xC846
+
+#define REG_CAM_SYSCTL_PLL_ENABLE                 0xC97E 
 #define REG_CAM_SYSCTL_PLL_DIVIDER_M_N            0xC980
 #define REG_CAM_SYSCTL_PLL_DIVIDER_P              0xC982
 #define REG_CAM_SENSOR_CFG_Y_ADDR_START           0xC800
 #define REG_CAM_SENSOR_CFG_X_ADDR_START           0xC802
 #define REG_CAM_SENSOR_CFG_Y_ADDR_END             0xC804
 #define REG_CAM_SENSOR_CFG_X_ADDR_END             0xC806
-#define REG_CAM_SENSOR_CFG_PIXCLK                 0xC808
-#define REG_CAM_SENSOR_CFG_ROW_SPEED              0xC80C
-#define REG_CAM_SENSOR_CFG_FINE_INTEG_TIME_MIN    0xC80E
-#define REG_CAM_SENSOR_CFG_FINE_INTEG_TIME_MAX    0xC810
+#define REG_CAM_SENSOR_CFG_PIXCLK                 0xC808 
+#define REG_CAM_SENSOR_CFG_ROW_SPEED              0xC80C 
+#define REG_CAM_SENSOR_CFG_FINE_INTEG_TIME_MIN    0xC80E 
+#define REG_CAM_SENSOR_CFG_FINE_INTEG_TIME_MAX    0xC810 
 #define REG_CAM_SENSOR_CFG_FRAME_LENGTH_LINES     0xC812
 #define REG_CAM_SENSOR_CFG_LINE_LENGTH_PCK        0xC814
 #define REG_CAM_SENSOR_CFG_FINE_CORRECTION        0xC816
 #define REG_CAM_SENSOR_CFG_CPIPE_LAST_ROW         0xC818
 #define REG_CAM_SENSOR_CFG_REG_0_DATA             0xC826
 #define REG_CAM_SENSOR_CONTROL_READ_MODE          0xC834
+
 #define   CAM_SENSOR_CONTROL_VERT_FLIP_EN         0x0002
 #define   CAM_SENSOR_CONTROL_HORZ_FLIP_EN         0x0001
 #define   CAM_SENSOR_CONTROL_BINNING_EN           0x0330
 #define   CAM_SENSOR_CONTROL_SKIPPING_EN          0x0110
+#define   CAM_MON_HEARTBEAT                       0x8006 //the frame counter. updates on vertical blanking.
+
 #define REG_CAM_CROP_WINDOW_XOFFSET               0xC854
 #define REG_CAM_CROP_WINDOW_YOFFSET               0xC856
 #define REG_CAM_CROP_WINDOW_WIDTH                 0xC858
@@ -141,8 +152,8 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
 #define REG_PATCHLDR_APPLY_STATUS                 0xE008
 #define REG_AUTO_BINNING_MODE                     0xE801
 #define REG_CAM_SENSOR_CFG_MAX_ANALOG_GAIN        0xC81C
-#define REG_CROP_CROPMODE                         0xC85C
-#define REG_CAM_AET_AEMODE                        0xC878
+#define REG_CROP_CROPMODE                         0xC85C 
+#define REG_CAM_AET_AEMODE                        0xC878 
 #define REG_CAM_AET_TARGET_AVG_LUMA               0xC87A
 #define REG_CAM_AET_TARGET_AVERAGE_LUMA_DARK      0xC87B
 #define REG_CAM_AET_BLACK_CLIPPING_TARGET         0xC87C
@@ -190,14 +201,18 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
 #define REG_CAM_LL_CLUSTER_DC_TH_BM               0xC94E
 #define REG_CAM_LL_CLUSTER_DC_GATE_PERCENTAGE     0xC950
 #define REG_CAM_LL_SUMMING_SENSITIVITY_FACTOR     0xC951
+#define REG_CAM_LL_MODE                           0xBC02 //might be BC07.
 #define REG_CCM_DELTA_GAIN                        0xB42A
+
 
 
 #define REG_CAM_HUE_ANGLE                         0xC873
 
 // AWB
 #define REG_AWB_AWB_MODE                          0xC909
-
+#define REG_AWB_COL_TEMP                          0xC8F0//color temp, only writeable if awb mode is manual. in kelvin
+#define REG_AWB_COL_TEMP_MAX                      0xC8EE//maximum color temp in kelvin
+#define REG_AWB_COL_TEMP_MIN                      0xC8EC//minimum color temp in kelvin
 
 // UVC
 #define REG_UVC_AE_MODE                           0xCC00
@@ -206,12 +221,14 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
 #define REG_UVC_POWER_LINE_FREQUENCY              0xCC03
 #define REG_UVC_EXPOSURE_TIME                     0xCC04
 #define REG_UVC_BACKLIGHT_COMPENSATION            0xCC08
-#define REG_UVC_BRIGHTNESS                        0xCC0A
-#define REG_UVC_CONTRAST                          0xCC0C
+#define REG_UVC_BRIGHTNESS                        0xCC0A //set brightness in auto exposure mode.
+
+#define REG_UVC_CONTRAST                          0xCC0C //not exactly what the name suggests. See chip documentation 
+
 #define REG_UVC_GAIN                              0xCC0E
 #define REG_UVC_HUE                               0xCC10
 #define REG_UVC_SATURATION                        0xCC12
-#define REG_UVC_SHARPNESS                         0xCC14
+#define REG_UVC_SHARPNESS                         0xCC14 
 #define REG_UVC_GAMMA                             0xCC16
 #define REG_UVC_WHITE_BALANCE_TEMPERATURE         0xCC18
 #define REG_UVC_FRAME_INTERVAL                    0xCC1C
@@ -219,6 +236,25 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
 #define REG_UVC_FLICKER_AVOIDANCE                 0xCC21
 #define REG_UVC_ALGO                              0xCC22
 #define REG_UVC_RESULT_STATUS                     0xCC24
+
+/**This variable selects the system event that the host wishes to wait for.
+ * 1: end of frame
+ * 2: start of frame */
+#define REG_CMD_HANDLER_WAIT_FOR_EVENT            0xFC00
+
+/** This variable determines the number of system event occurrences for which the
+ *  Command Handler component will wait */
+#define REG_CMD_HANDLER_NUM_WAIT_EVENTS           0xFC02
+
+/**Result status code for last refresh command. Updates after refresh command.
+ * Possible values:
+   0x00: ENOERR - refresh successful
+   0x13: EINVCROPX - invalid horizontal crop configuration
+   0x14: EINVCROPY - invalid vertical crop configuration
+   0x15: EINVTC - invalid Tilt Correction percentage
+*/
+
+#define REG_SEQ_ERROR_CODE                        0x8406
 
 
 /* SYS_STATE values (for SYSMGR_NEXT_STATE and SYSMGR_CURRENT_STATE) */
@@ -231,6 +267,26 @@ MODULE_PARM_DESC(debug, "Debug level (0-1)");
 #define MT9M114_SYS_STATE_STANDBY                       0x52
 #define MT9M114_SYS_STATE_LEAVE_STANDBY                 0x54
 
+//Custom V4L control variables
+#define V4L2_MT9M114_FADE_TO_BLACK (V4L2_CID_PRIVATE_BASE) //boolean, enable or disable fade to black feature
+
+
+/**
+ * This enum is used as index for the state's uvc_register_out_of_sync array.
+ */
+typedef enum {
+    UVC_EXPOSURE_TIME,
+    UVC_GAIN,
+    UVC_BRIGHTNESS,
+    UVC_CONTRAST,
+    UVC_SATURATION,
+    UVC_SHARPNESS,
+    NUM_OF_UVC_REGISTERS /** < This value should always be the last! */
+} uvc_registers;
+
+
+
+
 /*
  * Information we maintain about a known sensor.
  */
@@ -242,6 +298,11 @@ struct mt9m114_info {
   int hue;			/* Hue value */
   int flag_vflip;              /* flip vertical */
   int flag_hflip;              /* flip horizontal */
+  
+  /* The change config command sometimes breaks the sync between uvc registers and cam
+   * variables. This array keeps track of which uvc registers are out of sync 
+   * and which are not. Use the uvc_registers enum to access this array */
+  bool uvc_register_out_of_sync[NUM_OF_UVC_REGISTERS]; 
 };
 
 static inline struct mt9m114_info *to_state(struct v4l2_subdev *sd)
@@ -252,10 +313,10 @@ static inline struct mt9m114_info *to_state(struct v4l2_subdev *sd)
 
 
 /*
- * The default register settings, as obtained from OmniVision.  There
+ * The default register settings. There
  * is really no making sense of most of these - lots of "reserved" values
  * and such.
- *
+ * FIXME this might be a leftover from the old omnivision driver?!
  * These settings give VGA YUYV.
  */
 
@@ -455,25 +516,25 @@ static struct regval_list ccm_awb_regs[] = {
 
 
 static struct regval_list uvc_ctrl_regs[] = {
-  { 0xCC00, 1, 0x02},
-  { 0xCC01, 1, 0x01},
-  { 0xCC02, 1, 0x00},
-  { 0xCC03, 1, 0x02},
-  { 0xCC04, 4, 0x00000001},
-  { 0xCC08, 2, 0x0001},
-  { 0xCC0A, 2, 0x0037},
-  { 0xCC0C, 2, 0x0020},
-  { 0xCC0E, 2, 0x0020},
-  { 0xCC10, 2, 0x0000},
-  { 0xCC12, 2, 0x0080},
-  { 0xCC14, 2, -7},
-  { 0xCC16, 2, 0x00DC},
-  { 0xCC18, 2, 0x09C4},
-  { 0xCC1C, 4, 0x00000001},
-  { 0xCC20, 1, 0x00},
-  { 0xCC21, 1, 0x00},
-  { 0xCC22, 2, 0x0007},
-  { 0xCC24, 1, 0x00},
+  { REG_UVC_AE_MODE, 1, 0x02}, //has to be enabled by default, otherwise the camera will never start
+  { REG_UVC_AUTO_WHITE_BALANCE_TEMPERATURE, 1, 0x01},
+  { REG_UVC_AE_PRIORITY, 1, 0x00},
+  { REG_UVC_POWER_LINE_FREQUENCY, 1, 0x02},
+  { REG_UVC_EXPOSURE_TIME, 4, 0x00000001},
+  { REG_UVC_BACKLIGHT_COMPENSATION, 2, 0x0001},
+  { REG_UVC_BRIGHTNESS, 2, 0x0037},
+  { REG_UVC_CONTRAST, 2, 0x0020},
+  { REG_UVC_GAIN, 2, 0x0020},
+  { REG_UVC_HUE, 2, 0x0000},
+  { REG_UVC_SATURATION, 2, 0x0080},
+  { REG_UVC_SHARPNESS, 2, -7},
+  { REG_UVC_GAMMA, 2, 0x00DC},
+  { REG_UVC_WHITE_BALANCE_TEMPERATURE, 2, 0x09C4},
+  { REG_UVC_FRAME_INTERVAL, 4, 0x00000001},
+  { REG_UVC_MANUAL_EXPOSURE, 1, 0x00}, //disable flicker avoidance, allow exposure time to be longer than the frame time.
+  { REG_UVC_FLICKER_AVOIDANCE, 1, 0x00},
+  { REG_UVC_ALGO, 2, 0x0007},
+  { REG_UVC_RESULT_STATUS, 1, 0x00},
   { 0xffff, 0xffff ,0xffff}
 };
 
@@ -494,7 +555,7 @@ static struct regval_list mt9m114_960p30_regs[] = {
   {REG_CAM_SENSOR_CFG_FINE_CORRECTION, 2, 96},
   {REG_CAM_SENSOR_CFG_CPIPE_LAST_ROW, 2, 963},
   {REG_CAM_SENSOR_CFG_REG_0_DATA, 2, 0x0020},
-  // {REG_CAM_SENSOR_CONTROL_READ_MODE, 1, 0x0000},
+ // {REG_CAM_SENSOR_CONTROL_READ_MODE, 1, 0x0000},
   {REG_CAM_CROP_WINDOW_XOFFSET, 2, 0x0000},
   {REG_CAM_CROP_WINDOW_YOFFSET, 2, 0x0000},
   {REG_CAM_CROP_WINDOW_WIDTH, 2, 1280},
@@ -532,7 +593,7 @@ static struct regval_list mt9m114_720p36_regs[] = {
   {REG_CAM_SENSOR_CFG_FINE_CORRECTION, 2, 96},
   {REG_CAM_SENSOR_CFG_CPIPE_LAST_ROW, 2, 723},
   {REG_CAM_SENSOR_CFG_REG_0_DATA, 2, 0x0020},
-  // {REG_CAM_SENSOR_CONTROL_READ_MODE, 1, 0x0000},
+ // {REG_CAM_SENSOR_CONTROL_READ_MODE, 1, 0x0000},
   {REG_CAM_CROP_WINDOW_XOFFSET, 2, 0x0000},
   {REG_CAM_CROP_WINDOW_YOFFSET, 2, 0x0000},
   {REG_CAM_CROP_WINDOW_WIDTH, 2, 1280},
@@ -589,7 +650,7 @@ static struct regval_list mt9m114_vga_30_to_75_binned_regs[] = {
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YSTART, 2, 0x0000},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_XEND, 2, 127},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 95},
-  // {REG_AUTO_BINNING_MODE,1, 0x00},
+ // {REG_AUTO_BINNING_MODE,1, 0x00},
   { 0xffff, 0xffff ,0xffff }
 };
 #endif
@@ -601,17 +662,17 @@ static struct regval_list mt9m114_vga_30_scaling_regs[] = {
   {REG_CAM_SENSOR_CFG_Y_ADDR_END, 2, 971},
   {REG_CAM_SENSOR_CFG_X_ADDR_END, 2, 1291},
   {REG_CAM_SENSOR_CFG_PIXCLK, 4, 48000000},
-  {REG_CAM_SENSOR_CFG_ROW_SPEED, 2, 1},
+  {REG_CAM_SENSOR_CFG_ROW_SPEED, 2, 1},//FIXME according to the documentation this value is unused, however we still set the default. No idea why
   {REG_CAM_SENSOR_CFG_FINE_INTEG_TIME_MIN, 2, 219},
   {REG_CAM_SENSOR_CFG_FINE_INTEG_TIME_MAX, 2, 1460},
-  {REG_CAM_SENSOR_CFG_FRAME_LENGTH_LINES, 2, 1006},
-  {REG_CAM_SENSOR_CFG_LINE_LENGTH_PCK, 2, 1591},
+  {REG_CAM_SENSOR_CFG_FRAME_LENGTH_LINES, 2, 1006},//FIXME might be a typo. default value is 1007
+  {REG_CAM_SENSOR_CFG_LINE_LENGTH_PCK, 2, 1591},//FIXME might be a typo? default is 1589
   {REG_CAM_SENSOR_CFG_FINE_CORRECTION, 2, 96},
-  {REG_CAM_SENSOR_CFG_CPIPE_LAST_ROW, 2, 963},
+  {REG_CAM_SENSOR_CFG_CPIPE_LAST_ROW, 2, 963}, 
   {REG_CAM_SENSOR_CFG_REG_0_DATA, 2, 0x0020},
-  // {REG_CAM_SENSOR_CONTROL_READ_MODE, 1, 0x0000},
-  {REG_CAM_CROP_WINDOW_XOFFSET, 2, 0x0000},
-  {REG_CAM_CROP_WINDOW_YOFFSET, 2, 0x0000},
+ // {REG_CAM_SENSOR_CONTROL_READ_MODE, 1, 0x0000},
+  {REG_CAM_CROP_WINDOW_XOFFSET, 2, 0x0000}, 
+  {REG_CAM_CROP_WINDOW_YOFFSET, 2, 0x0000}, 
   {REG_CAM_CROP_WINDOW_WIDTH, 2, 1280},
   {REG_CAM_CROP_WINDOW_HEIGHT, 2, 960},
   {REG_CROP_CROPMODE, 1, 3},
@@ -628,8 +689,8 @@ static struct regval_list mt9m114_vga_30_scaling_regs[] = {
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YSTART, 2, 0x0000},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_XEND, 2, 127},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 95},
-  // {REG_AUTO_BINNING_MODE,1, 0x00},
-  { 0xffff, 0xffff ,0xffff }
+ // {REG_AUTO_BINNING_MODE,1, 0x00},
+  { 0xffff, 0xffff ,0xffff }//array end, 
 };
 
 #if 0
@@ -648,7 +709,7 @@ static struct regval_list mt9m114_qvga_30_to_120_binned_regs[] = {
   {REG_CAM_SENSOR_CFG_FINE_CORRECTION, 2, 224},
   {REG_CAM_SENSOR_CFG_CPIPE_LAST_ROW, 2, 244},
   {REG_CAM_SENSOR_CFG_REG_0_DATA, 2, 0x0020},
-  // {REG_CAM_SENSOR_CONTROL_READ_MODE, 1, 0x0000},
+ // {REG_CAM_SENSOR_CONTROL_READ_MODE, 1, 0x0000},
   {REG_CAM_CROP_WINDOW_XOFFSET, 2, 0x0000},
   {REG_CAM_CROP_WINDOW_YOFFSET, 2, 0x0000},
   {REG_CAM_CROP_WINDOW_WIDTH, 2, 320},
@@ -667,7 +728,7 @@ static struct regval_list mt9m114_qvga_30_to_120_binned_regs[] = {
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YSTART, 2, 0x0000},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_XEND, 2, 63},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 47},
-  //  {REG_AUTO_BINNING_MODE,1, 0x00},
+//  {REG_AUTO_BINNING_MODE,1, 0x00},
 
   { 0xffff, 0xffff ,0xffff }
 };
@@ -707,7 +768,7 @@ static struct regval_list mt9m114_qvga_30_scaling_regs[] = {
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YSTART, 2, 0x0000},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_XEND, 2, 63},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 47},
-  //  {REG_AUTO_BINNING_MODE,1, 0x00},
+//  {REG_AUTO_BINNING_MODE,1, 0x00},
 
   { 0xffff, 0xffff ,0xffff }
 };
@@ -747,7 +808,7 @@ static struct regval_list mt9m114_160x120_30_to_120_binned_regs[] = {
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YSTART, 2, 0x0000},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_XEND, 2, 31},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 23},
-  //  {REG_AUTO_BINNING_MODE,1, 0x00},
+//  {REG_AUTO_BINNING_MODE,1, 0x00},
 
   { 0xffff, 0xffff ,0xffff }
 };
@@ -787,7 +848,7 @@ static struct regval_list mt9m114_160x120_30_scaling_regs[] = {
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YSTART, 2, 0x0000},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_XEND, 2, 31},
   {REG_CAM_STAT_AE_INITIAL_WINDOW_YEND, 2, 23},
-  //  {REG_AUTO_BINNING_MODE,1, 0x00},
+//  {REG_AUTO_BINNING_MODE,1, 0x00},
 
   { 0xffff, 0xffff ,0xffff }
 };
@@ -807,6 +868,22 @@ static struct regval_list mt9m114_fmt_yuv422[] = {
 };
 
 
+//forward declarations
+static int mt9m114_wait_num_frames(struct v4l2_subdev *sd, u16 numFrames);
+static int mt9m114_g_exposure(struct v4l2_subdev *sd, s32 *value);
+static int mt9m114_s_exposure(struct v4l2_subdev *sd, u32 value);
+static int mt9m114_g_gain(struct v4l2_subdev *sd, s32 *value);
+static int mt9m114_s_gain(struct v4l2_subdev *sd, int value);
+static int mt9m114_g_brightness(struct v4l2_subdev *sd, s32 *value);
+static int mt9m114_s_brightness(struct v4l2_subdev *sd, int value);
+static int mt9m114_g_contrast(struct v4l2_subdev *sd, s32 *value);
+static int mt9m114_s_contrast(struct v4l2_subdev *sd, int value);
+static int mt9m114_g_sat(struct v4l2_subdev *sd, s32 *value);
+static int mt9m114_s_sat(struct v4l2_subdev *sd, int value);
+static int mt9m114_g_sharpness(struct v4l2_subdev *sd, s32 *value);
+static int mt9m114_s_sharpness(struct v4l2_subdev *sd, int value);
+static int mt9m114_g_hue(struct v4l2_subdev *sd, s32 *value);
+
 
 
 /*
@@ -814,16 +891,16 @@ static struct regval_list mt9m114_fmt_yuv422[] = {
  */
 
 static int mt9m114_read(struct v4l2_subdev *sd,
-    u16 reg,
-    u16 size,
-    u32 *value)
+                        u16 reg,
+                        u16 size,
+                        u32 *value)
 {
   u8 cmd[10];
 
   struct i2c_client *client = v4l2_get_subdevdata(sd);
   cmd[0] = reg/256;
   cmd[1] = reg%256;
-  i2c_master_send(client, cmd, 2);
+  i2c_master_send(client, cmd, 2); //FIXME these functions return error codes. Check them.
   i2c_master_recv(client, cmd, size);
   if( size == 2 )
   {
@@ -832,7 +909,7 @@ static int mt9m114_read(struct v4l2_subdev *sd,
   else if( size == 4 )
   {
     *value = (((u32)cmd[0])<<24) + (((u32)cmd[1])<<16) +
-      (((u32)cmd[2])<<8)  + (((u32)cmd[3])<<0);
+             (((u32)cmd[2])<<8)  + (((u32)cmd[3])<<0);
   }
   else if( size == 1 )
   {
@@ -846,9 +923,9 @@ static int mt9m114_read(struct v4l2_subdev *sd,
 #define MAX_MASTER_WRITE 48
 
 static int mt9m114_burst_write(struct v4l2_subdev *sd,
-    u16 reg,
-    u16 * array,
-    u16 size)
+                               u16 reg,
+                               u16 * array,
+                               u16 size)
 {
   int i=0;
   int index=0, abs_index=0;
@@ -881,39 +958,66 @@ static int mt9m114_burst_write(struct v4l2_subdev *sd,
   return 0;
 }
 
+/**
+ * 
+ * @param sd
+ * @param reg
+ * @param size
+ * @param value
+ * @return 0 in case of success. Errno error code otherwise.
+ */
 static int mt9m114_write(struct v4l2_subdev *sd,
-    u16 reg,
-    u16 size,
-    u32 value)
+                         u16 reg,
+                         u16 size,
+                         u32 value)
 {
 
-  int ret=0;
-  u8 cmd[10];
-  int index=0;
-  struct i2c_client *client = v4l2_get_subdevdata(sd);
+   u8 cmd[10];
+   int index=0;
+   struct i2c_client *client = v4l2_get_subdevdata(sd);
+   int numBytesWritten = 0;
+   
+   cmd[index++] = reg/256;
+   cmd[index++] = reg%256;
 
-  cmd[index++] = reg/256;
-  cmd[index++] = reg%256;
+   if( size == 2) 
+   {
+     //FIXME this breaks signedness.
+     cmd[index++] = value/256;
+     cmd[index++] = value%256;
+   }
+   else if( size == 4)
+   {
+     cmd[index++] = value>>24 & 0xff;
+     cmd[index++] = value>>16 & 0xff;
+     cmd[index++] = value>>8   & 0xff;
+     cmd[index++] = value>>0   & 0xff;
+   }
+   else if( size == 1)
+   {
+     cmd[index++] = value;
+   }
+   
+   numBytesWritten = i2c_master_send(client, cmd, index); //returns negative errno or the number of bytes written
 
-  if( size == 2)
-  {
-    cmd[index++] = value/256;
-    cmd[index++] = value%256;
-  }
-  else if( size == 4)
-  {
-    cmd[index++] = value>>24 & 0xff;
-    cmd[index++] = value>>16 & 0xff;
-    cmd[index++] = value>>8   & 0xff;
-    cmd[index++] = value>>0   & 0xff;
-  }
-  else if( size == 1)
-  {
-    cmd[index++] = value;
-  }
-  i2c_master_send(client, cmd, index);
-
-  return ret;
+   if(numBytesWritten != index) //make sure that everything was written
+   {
+     if(numBytesWritten < 0) //error code
+     {
+       numBytesWritten *= -1; //in case of error i2c_master_send returns the negative errno.
+       dprintk(0,"MT9M114","MT9M114 : i2c send failed. Error code: 0x%x\n", numBytesWritten);
+       return numBytesWritten;
+     }
+     else
+     {
+       dprintk(0,"MT9M114","MT9M114 : i2c send failed. Wrote %i bytes but should have written %i bytes\n", numBytesWritten, index);
+       return EIO;
+     }
+   }
+   else
+   {
+     return 0;
+   }
 }
 
 
@@ -937,7 +1041,7 @@ static int mt9m114_write_array(struct v4l2_subdev *sd, struct regval_list *vals)
 
 static int mt9m114_errata_1(struct v4l2_subdev *sd)
 {
-  mt9m114_write(sd, REG_SAMP_COL_PUP2, 2, 0xFF39);
+  mt9m114_write(sd, REG_SAMP_COL_PUP2, 2, 0xFF39); //no idea, register is undocumented
   return 0;
 }
 
@@ -945,16 +1049,26 @@ static int mt9m114_errata_1(struct v4l2_subdev *sd)
 #define RESET_REGISTER_MASK_BAD 0x0200
 static int mt9m114_errata_2(struct v4l2_subdev *sd)
 {
-  mt9m114_write(sd, REG_RESET_REGISTER, 2, 564);
+  //FIXME this doesn't make sense
+  //bit 2 is reserved and the default value is 0 but it is set to 1.
+  //bit 5 is reserved, default is 0 but it is set to 1
+  //MSB is the actual reset register. No idea why the others are changed.
+  mt9m114_write(sd, REG_RESET_REGISTER, 2, 564); //1000110100
   return 0;
 }
 
+/**
+ * 
+ * @param sd
+ * @param bit_mask
+ * @return 0 if everything is ok, 1 otherwise
+ */
 static int poll_command_register_bit(struct v4l2_subdev *sd, u16 bit_mask)
 {
   int i=0;
   u32 v=0;
 
-  for (i = 0; i < 10; i++)
+  for (i = 0; i < 1000; i++)
   {
     msleep(10);
     mt9m114_read(sd, REG_COMMAND_REGISTER, 2, &v);
@@ -964,6 +1078,56 @@ static int poll_command_register_bit(struct v4l2_subdev *sd, u16 bit_mask)
     }
   }
   return 1;
+}
+
+/**
+ * Reads the uvc_result_status register. 
+ * If it contains an error the error is printed to dmesg together with funcName.
+ * 
+ * @note uvc_result_status updates on vertical blanking. Therefore it might not
+ *       contain the correct value if you do not wait until vertical blanking.
+ * @param sd
+ * @param funcName Name of the calling function.
+ * @return In case of error: The errno code or -1 if the error code is unknown. 0 Otherwise.
+ */
+static int check_uvc_status(struct v4l2_subdev *sd, const char* funcName)
+{
+  int result;
+  mt9m114_read(sd, REG_UVC_RESULT_STATUS, 1, &result);
+  
+  
+  /* uvc_result_status can contain the following error codes:
+     0x00 ENOERR no error - change was accepted and actioned.
+     0x08 EACCES permission denied.
+     0x09 EBUSY entity busy, cannot support operation.
+     0x0C EINVAL invalid argument.
+     0x0E ERANGE parameter out-of-range.
+     0x0F ENOSYS operation not supported.
+   */
+  switch(result)
+  {
+    case 0: //no error
+      dprintk(0,"MT9M114","%s REG_UVC_RESULT_STATUS: ENOERR\n", funcName);
+      return 0;
+    case 0x08: //EACCES
+      dprintk(0,"MT9M114","%s REG_UVC_RESULT_STATUS: EACCES\n", funcName);
+      return EACCES;
+    case 0x09: //EBUSY
+      dprintk(0,"MT9M114","%s REG_UVC_RESULT_STATUS: EBUSY\n", funcName);
+      return EBUSY;
+    case 0x0C: //EINVAL
+      dprintk(0,"MT9M114","%s REG_UVC_RESULT_STATUS: EINVAL\n", funcName);
+      return EINVAL;
+    case 0x0E: //ERANGE
+      dprintk(0,"MT9M114","%s REG_UVC_RESULT_STATUS: ERANGE\n", funcName);
+      return ERANGE;
+    case 0x0F: //ENOSYS
+      dprintk(0,"MT9M114","%s REG_UVC_RESULT_STATUS: ENOSYS\n", funcName);
+      return ENOSYS;
+    default:
+      dprintk(0,"MT9M114","%s REG_UVC_RESULT_STATUS: Unknown error code\n", funcName);
+      return -1;
+  }
 }
 
 
@@ -1002,7 +1166,6 @@ static int mt9m114_patch2_black_lvl_correction_fix(struct v4l2_subdev *sd)
   mt9m114_write(sd, REG_PATCHLDR_PATCH_ID, 2, 0x0202);
   mt9m114_write(sd, REG_PATCHLDR_FIRMWARE_ID, 4, 0x41030202);
 
-  dprintk(0,"MT9M114","MT9M114 : applying patch 2, Black level correction fix...\n");
   mt9m114_write(sd, REG_COMMAND_REGISTER, 2, HOST_COMMAND_OK);
   v = HOST_COMMAND_OK | HOST_COMMAND_APPLY_PATCH;
   mt9m114_write(sd, REG_COMMAND_REGISTER, 2, v);
@@ -1016,7 +1179,6 @@ static int mt9m114_patch2_black_lvl_correction_fix(struct v4l2_subdev *sd)
   if ( !(v & HOST_COMMAND_OK))
   {
     dprintk(0,"MT9M114","Warning : apply patch 2 Black level correction fix Host_command not OK\n");
-    return -1;
   }
 
   mt9m114_read(sd, REG_PATCHLDR_APPLY_STATUS, 1, &v);
@@ -1145,7 +1307,6 @@ static int mt9m114_patch3_adaptive_sensitivity(struct v4l2_subdev *sd)
   mt9m114_write(sd, REG_PATCHLDR_PATCH_ID, 2, 0x0302);
   mt9m114_write(sd, REG_PATCHLDR_FIRMWARE_ID, 4, 0x41030202);
 
-  dprintk(0,"MT9M114","MT9M114 : applying patch 3, Adaptive Sensitivity...\n");
   v = HOST_COMMAND_APPLY_PATCH | HOST_COMMAND_OK;
   mt9m114_write(sd, REG_COMMAND_REGISTER, 2, v);
 
@@ -1171,14 +1332,39 @@ static int mt9m114_patch3_adaptive_sensitivity(struct v4l2_subdev *sd)
   return 0;
 }
 
+/**
+ * Sets the specified uvc register to synced.
+ * @param sd
+ * @param reg
+ */
+static void mt9m114_set_uvc_register_synced(struct v4l2_subdev *sd, uvc_registers reg)
+{
+  struct mt9m114_info *info = to_state(sd);
+  info->uvc_register_out_of_sync[reg] = false;   
+}
+
+/**
+ * Checks whether the specified uvc register is currently synced.
+ * @param sd
+ * @param reg
+ * @return  true if it is synced.
+ */
+static bool mt9m114_uvc_register_is_out_of_sync(struct v4l2_subdev *sd, uvc_registers reg)
+{
+  struct mt9m114_info *info = to_state(sd);
+  return info->uvc_register_out_of_sync[reg];
+}
+
 static int mt9m114_set_state_command(struct v4l2_subdev *sd)
 {
+  //NOTE: code from this method has been copied to wait_for_end_of_frame().
+  //      If you fix a bug in here, fix it over there as well.
   u32 v=0;
   // (Optional) First check that the FW is ready to accept a new command
   mt9m114_read(sd, REG_COMMAND_REGISTER, 2, &v);
   if (v & HOST_COMMAND_SET_STATE)
   {
-    dprintk(1,"MT9M114","MT9M114 : Set State cmd bit is already set 0x%x\n",v);
+    dprintk(0,"MT9M114","MT9M114 : Set State cmd bit is already set 0x%x\n",v);
     return -1;
   }
   // (Mandatory) Issue the Set State command
@@ -1190,24 +1376,36 @@ static int mt9m114_set_state_command(struct v4l2_subdev *sd)
   mt9m114_read(sd, REG_COMMAND_REGISTER, 2, &v);
   if ( !(v & HOST_COMMAND_OK))
   {
-    dprintk(1,"MT9M114","MT9M114 : set state command fail");
+    dprintk(0,"MT9M114","MT9M114 : set state command fail");
     return -1;
   }
   return 0;
 }
 
-//-----------------------------------------------------------------------------
-// refresh - The Refresh command is intended to refresh subsystems without
-// requiring a sensor configuration change
-//-----------------------------------------------------------------------------
+
+/**
+ * Refresh subsystems without requiring a sensor configuration change.
+ * @note This call blocks till the next frame.
+ * @param sd
+ * @return 
+ */
 static int mt9m114_refresh(struct v4l2_subdev *sd)
 {
-  u32 v=0;
+  u32 v=0;//a temporary variable used for several read commands
+  
+  //make sure that the refresh command is really processed and that 
+  //exposure and user changes are processed as well.
+  mt9m114_read(sd, REG_UVC_ALGO, 2, &v);
+  v |= 0b111;
+  mt9m114_write(sd, REG_UVC_ALGO,2, v);
+  //Changes to REG_UVC_ALGO take effect on vertical blanking, therefore wait one frame.
+  mt9m114_wait_num_frames(sd, 1);
+  
   // First check that the FW is ready to accept a Refresh command
   mt9m114_read(sd, REG_COMMAND_REGISTER, 2, &v);
   if (v & HOST_COMMAND_REFRESH)
   {
-    dprintk(1,"MT9M114","MT9M114 : Refresh cmd bit is already set 0x%x\n",v);
+    dprintk(0,"MT9M114","MT9M114 : Refresh cmd bit is already set 0x%x\n",v);
     return -1;
   }
 
@@ -1222,26 +1420,128 @@ static int mt9m114_refresh(struct v4l2_subdev *sd)
   mt9m114_read(sd, REG_COMMAND_REGISTER, 2, &v);
   if ( !(v & HOST_COMMAND_OK))
   {
-    dprintk(1,"MT9M114","MT9M114 : refresh command fail");
+    dprintk(0,"MT9M114","MT9M114 : refresh command fail");
     return -1;
   }
 
+  //check refresh command error code
+  mt9m114_read(sd, REG_SEQ_ERROR_CODE, 1, &v);
+  if(v != 0)
+  {
+    dprintk(0,"MT9M114","%s Refresh ERROR: %x\n",__func__, v);
+  }
+  
+  
   mt9m114_read(sd, REG_UVC_RESULT_STATUS, 1, &v);
-  dprintk(1,"MT9M114","%s REG_UVC_RESULT_STATUS:%x\n",__func__, v);
+  dprintk(0,"MT9M114","%s REG_UVC_RESULT_STATUS: %x\n",__func__, v);
 
+  
+  //the refresh command schedules an update on the next end of frame.
+  //It does not wait until the end of frame is actually reached.
+  //Therefore we need to wait until the end of the frame manually.
+  mt9m114_wait_num_frames(sd, 1);
+  
+  
   return 0;
 }
 
+/**
+ * Waits until a number of frames have passed
+ * This method can be used to wait for vertical blanking as vertical blanking 
+ * occurs at the end of a frame.
+ * @param sd
+ * @param numFrames the number of frames to wait
+ * @return -1 in case of error, 0 otherwise.
+ */
+static int mt9m114_wait_num_frames(struct v4l2_subdev *sd, u16 numFrames)
+{
+    //FIXME copy & paste from set_state_command
+    u32 v=0;
+    u32 frameCountBefore = 0;
+    u32 frameCountAfter = 0;
+    
+    //get the current frame count
+    mt9m114_read(sd, CAM_MON_HEARTBEAT, 2, &frameCountBefore);
+    
+    
+    //specify for which event we want to wait:  2 = start of next frame
+    mt9m114_write(sd, REG_CMD_HANDLER_WAIT_FOR_EVENT, 2, 2);
 
-//-----------------------------------------------------------------------------
-// Change-Config - re-configures device state using CAM configuration variables
-//-----------------------------------------------------------------------------
+    //specify for how much frames we want to wait
+    mt9m114_write(sd, REG_CMD_HANDLER_NUM_WAIT_EVENTS, 2, numFrames);
+   
+    // (Optional) First check that the FW is ready to accept a new command
+    mt9m114_read(sd, REG_COMMAND_REGISTER, 2, &v);
+    if (v & HOST_COMMAND_WAIT_FOR_EVENT)
+    {
+      //This should never happen as long as nobody opens the driver device in async mode.
+      dprintk(0,"MT9M114","MT9M114 : Host command wait for event already set 0x%x\n",v);
+      return -1;
+    }
+    // (Mandatory) Issue the wait for command
+    // We set the 'OK' bit so we can detect if the command fails. The chip will unset the OK bit if everything is ok.
+    mt9m114_write(sd, REG_COMMAND_REGISTER, 2, HOST_COMMAND_WAIT_FOR_EVENT | HOST_COMMAND_OK);
+    // Wait for the FW to complete the command (clear the HOST_COMMAND_1 bit)
+    poll_command_register_bit(sd, HOST_COMMAND_WAIT_FOR_EVENT);
+    // Check the 'OK' bit to see if the command was successful
+    mt9m114_read(sd, REG_COMMAND_REGISTER, 2, &v);
+    if ( !(v & HOST_COMMAND_OK))
+    {
+      dprintk(0,"MT9M114","MT9M114 : wait for end of frame failed: TIMEOUT?!");
+      return -1;
+    }
+    
+    //read frame count after
+    mt9m114_read(sd, CAM_MON_HEARTBEAT, 2, &frameCountAfter);
+    
+    if(frameCountBefore == frameCountAfter)
+    {
+      dprintk(0,"MT9M114","MT9M114 : wait for end of frame failed. Frame is still the same.");
+    }
+    
+    return 0;
+}
+
+/**
+ * Indicate that uvc and cam variables have gone out of sync.
+ */
+static void mt9m114_uvc_out_of_sync(struct mt9m114_info* pInfo) 
+{
+    int i;
+    for(i = 0; i < NUM_OF_UVC_REGISTERS; ++i)
+    {
+        pInfo->uvc_register_out_of_sync[i] = true;
+    }
+}
+
+/**
+ * Re-configure device state using CAM configuration variables.
+ * @param sd
+ * @return 0 on success or a negative error code.
+ */
 static int mt9m114_change_config(struct v4l2_subdev *sd)
 {
   u32 v=0;
   int ret;
   struct mt9m114_info *info = to_state(sd);
 
+  /*
+   * change_config updates the sensor configuration using the cam variables.
+   * It totally ignores what the uvc variables say.
+   * E.g. if cam says the exposure should be 20 then after change_config the
+   * exposure will be 20 even though uvc says it should be 42.
+   * 
+   * This is not a problem in itself.
+   * However the uvc variables are not updated.
+   * After a change config command the uvc will still tell you that the exposure
+   * is 42. Even though it really is 20.
+   * Additionally if the user tries to reset the exposure to 42
+   * using uvc does not work because from uvc's point of view the variable has not
+   * changed.
+   * 
+   */
+  mt9m114_uvc_out_of_sync(info); //after change_config all uvc registers will be out of sync.
+  
   /* Program orientation register. */
   mt9m114_write(sd, REG_LOGICAL_ADDRESS_ACCESS, 2, 0x0000);
   ret = mt9m114_read(sd, REG_CAM_SENSOR_CONTROL_READ_MODE, 2, &v);
@@ -1259,9 +1559,6 @@ static int mt9m114_change_config(struct v4l2_subdev *sd)
 
   mt9m114_write(sd, REG_CAM_SENSOR_CONTROL_READ_MODE, 2, v);
 
-
-
-
   // Set the desired next state (SYS_STATE_ENTER_CONFIG_CHANGE = 0x28)
   mt9m114_write(sd,REG_SYSMGR_NEXT_STATE, 1, MT9M114_SYS_STATE_ENTER_CONFIG_CHANGE);
   ret = mt9m114_set_state_command(sd);
@@ -1270,36 +1567,39 @@ static int mt9m114_change_config(struct v4l2_subdev *sd)
   mt9m114_read(sd, REG_SYSMGR_CURRENT_STATE, 1, &v);
   if(v!=MT9M114_SYS_STATE_STREAMING)
   {
-    dprintk(1,"MT9M114","MT9M114 %s System state is not STREAMING\n",__func__);
+    dprintk(0,"MT9M114","MT9M114 %s System state is not STREAMING\n",__func__);
     return -1;
   }
 
   mt9m114_read(sd, REG_UVC_RESULT_STATUS, 1, &v);
-  dprintk(1,"MT9M114","%s REG_UVC_RESULT_STATUS:%x\n",__func__, v);
-
+  dprintk(0,"MT9M114","%s REG_UVC_RESULT_STATUS:%x\n",__func__, v);
+  
   return 0;
 }
 
 static int mt9m114_sensor_optimization(struct v4l2_subdev *sd)
 {
-  mt9m114_write(sd, REG_DAC_TXLO_ROW, 2, 0x8270);
-  mt9m114_write(sd, REG_DAC_TXLO, 2, 0x8270);
-  mt9m114_write(sd, REG_DAC_LD_4_5, 2, 0x3605);
-  mt9m114_write(sd, REG_DAC_LD_6_7, 2, 0x77FF);
-  mt9m114_write(sd, REG_DAC_ECL, 2, 0xC233);
+  //FIXME all registers used in here are undocumented. No idea about their purpose.
+  //      Maybe some commands for the fpga?
+  mt9m114_write(sd, REG_DAC_TXLO_ROW, 2, 0x8270); 
+  mt9m114_write(sd, REG_DAC_TXLO, 2, 0x8270); 
+  mt9m114_write(sd, REG_DAC_LD_4_5, 2, 0x3605); 
+  mt9m114_write(sd, REG_DAC_LD_6_7, 2, 0x77FF); 
+  mt9m114_write(sd, REG_DAC_ECL, 2, 0xC233); 
   mt9m114_write(sd, REG_DELTA_DK_CONTROL, 2, 0x87FF);
-  mt9m114_write(sd, REG_COLUMN_CORRECTION, 2, 0x6080);
-  mt9m114_write(sd, REG_AE_TRACK_MODE, 2, 0x0008);
+  mt9m114_write(sd, REG_COLUMN_CORRECTION, 2, 0x6080); 
+  mt9m114_write(sd, REG_AE_TRACK_MODE, 2, 0x0008); 
   return 0;
 }
 
 static int mt9m114_reset(struct v4l2_subdev *sd, u32 val)
 {
   u32 v;
+  dprintk(0,"MT9M114","MT9M114 : Resetting chip!\n");
   mt9m114_read(sd, REG_RESET_AND_MISC_CONTROL, 2, &v);
   mt9m114_write(sd, REG_RESET_AND_MISC_CONTROL, 2, v|0x01);
-  msleep(1); //datasheet documentation
-  mt9m114_write(sd, REG_RESET_AND_MISC_CONTROL, 2, v);
+  msleep(100); //FIXME This sleep shouldn't be here according to the documentation
+  mt9m114_write(sd, REG_RESET_AND_MISC_CONTROL, 2, v & (~1));
   msleep(100); //datasheet documentation
   mt9m114_errata_2(sd);
   return 0;
@@ -1308,9 +1608,9 @@ static int mt9m114_reset(struct v4l2_subdev *sd, u32 val)
 static int mt9m114_PLL_settings(struct v4l2_subdev *sd)
 {
   mt9m114_write(sd,REG_LOGICAL_ADDRESS_ACCESS, 2, 0x0000);
-  mt9m114_write(sd,REG_CAM_SYSCTL_PLL_ENABLE, 1, 1);
-  mt9m114_write(sd,REG_CAM_SYSCTL_PLL_DIVIDER_M_N, 2, 0x0120);
-  mt9m114_write(sd,REG_CAM_SYSCTL_PLL_DIVIDER_P, 2, 0x0700);
+  mt9m114_write(sd,REG_CAM_SYSCTL_PLL_ENABLE, 1, 1); //no idea what it does. 1 is default
+  mt9m114_write(sd,REG_CAM_SYSCTL_PLL_DIVIDER_M_N, 2, 0x0120); //no idea, default is 0x09a0
+  mt9m114_write(sd,REG_CAM_SYSCTL_PLL_DIVIDER_P, 2, 0x0700);//no idea, default is 0x0700
   return 0;
 }
 
@@ -1408,7 +1708,7 @@ static int mt9m114_init(struct v4l2_subdev *sd,u32 val)
   ret += mt9m114_patch3_adaptive_sensitivity(sd);
   if (ret != 0)
   {
-    dprintk(1,"MT9M114","MT9M114 : init fail\n");
+    dprintk(0,"MT9M114","MT9M114 : init fail\n");
   }
   return ret;
 }
@@ -1441,6 +1741,63 @@ static int mt9m114_detect(struct v4l2_subdev *sd)
   return ret;
 }
 
+/**
+ * Syncs the specified register and sets its value.
+ * @param sd
+ * @param reg
+ * @param size
+ * @param value
+ * @return 0 on success. error code otherwise.
+ */
+static int mt9m114_sync_and_set_uvc_register_u32(struct v4l2_subdev *sd, u16 reg, u32 size, u32 value)
+{
+    u32 oldValue;
+    int ret = 0;
+    
+    ret = mt9m114_read(sd, reg, size, &oldValue);
+    if(0 != ret) return ret;
+    
+    if(oldValue == value)
+    { //we only need to sync if the value is exactly the same.
+      //if it is not the same the sync will happen automatically  
+     
+      //+1 -1 is done because the value might already be at it's maximum or minimum.
+      //If it is at maximum +1 wouldn't work, if it is at minimum -1 would't work
+      ret = mt9m114_write(sd, reg, size, oldValue + 1);
+      if(0 != ret) return ret;
+      ret = mt9m114_write(sd, reg, size, oldValue - 1); 
+      if(0 != ret) return ret;
+    }
+    //write new value
+    ret = mt9m114_write(sd, reg, size, value);  
+    return ret;
+}
+
+static int mt9m114_sync_and_set_uvc_register_s32(struct v4l2_subdev *sd, u16 reg, u32 size, s32 value)
+{
+  //This is copy & paste from mt9m114_sync_and_set_uvc_register_u32
+    s32 oldValue;
+    int ret = 0;
+    
+    ret = mt9m114_read(sd, reg, size, &oldValue);
+    if(0 != ret) return ret;
+    
+    if(oldValue == value)
+    { //we only need to sync if the value is exactly the same.
+      //if it is not the same the sync will happen automatically  
+     
+      //+1 -1 is done because the value might already be at it's maximum or minimum.
+      //If it is at maximum +1 wouldn't work, if it is at minimum -1 would't work
+      ret = mt9m114_write(sd, reg, size, oldValue + 1);
+      if(0 != ret) return ret;
+      ret = mt9m114_write(sd, reg, size, oldValue - 1); 
+      if(0 != ret) return ret;
+    }
+    //write new value
+    ret = mt9m114_write(sd, reg, size, value);  
+    return ret;   
+}
+
 
 /*
  * Store information about the video data format.  The color matrix
@@ -1448,8 +1805,8 @@ static int mt9m114_detect(struct v4l2_subdev *sd)
  * The magic matrix nubmers come from OmniVision.
  */
 static struct mt9m114_format_struct {
-  __u8 *desc;
-  __u32 pixelformat;
+  u8 *desc;
+  u32 pixelformat;
   struct regval_list *regs;
   int bpp;   /* Bytes per pixel */
 } mt9m114_formats[] = {
@@ -1473,16 +1830,16 @@ static struct mt9m114_win_size {
   int ll_corection;
   int   binned;
   struct regval_list *regs; /* Regs to tweak */
-  /* h/vref stuff */
+/* h/vref stuff */
 } mt9m114_win_sizes[] = {
 
   /* 960p@28fps */
   {
-    .width		    = WXGA_WIDTH,
-    .height		    = FULL_HEIGHT,
-    .ll_corection          = 0,
-    .binned                = 0,
-    .regs 		    = mt9m114_960p30_regs,
+     .width		    = WXGA_WIDTH,
+     .height		    = FULL_HEIGHT,
+     .ll_corection          = 0,
+     .binned                = 0,
+     .regs 		    = mt9m114_960p30_regs,
   },
   /* 720p@36fps */
   {
@@ -1588,7 +1945,7 @@ static int mt9m114_try_fmt_internal(struct v4l2_subdev *sd,
    * we support, but not below the smallest.
    */
   for (wsize = mt9m114_win_sizes; wsize < mt9m114_win_sizes + N_WIN_SIZES;
-      wsize++)
+       wsize++)
     if (pix->width >= wsize->width && pix->height >= wsize->height)
       break;
   if (wsize >= mt9m114_win_sizes + N_WIN_SIZES)
@@ -1620,13 +1977,12 @@ static int mt9m114_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
   struct mt9m114_format_struct *mtfmt;
   struct mt9m114_win_size *wsize;
   struct mt9m114_info *info = to_state(sd);
-  dprintk(1,"MT9M114","%s entered in function \n", __func__);
 
   ret = mt9m114_try_fmt_internal(sd, fmt, &mtfmt, &wsize);
   if (ret)
     return ret;
 
-  // mt9m114_write_array(sd, mtfmt->regs);
+  mt9m114_write_array(sd, mtfmt->regs);
   ret = 0;
   if (wsize->regs)
     ret = mt9m114_write_array(sd, wsize->regs);
@@ -1641,9 +1997,9 @@ static int mt9m114_s_fmt(struct v4l2_subdev *sd, struct v4l2_format *fmt)
 
   mt9m114_read(sd, REG_CAM_SENSOR_CONTROL_READ_MODE, 2, &v);
   if (wsize->binned)
-    v = v | CAM_SENSOR_CONTROL_BINNING_EN;
+      v = v | CAM_SENSOR_CONTROL_BINNING_EN;
   else
-    v = v & (~CAM_SENSOR_CONTROL_BINNING_EN);
+      v = v & (~CAM_SENSOR_CONTROL_BINNING_EN);
   mt9m114_write(sd, REG_CAM_SENSOR_CONTROL_READ_MODE, 2, v);
   mt9m114_change_config(sd);
 
@@ -1702,14 +2058,41 @@ static int mt9m114_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *parms)
 }
 
 
-static int mt9m114_s_sat(struct v4l2_subdev *sd, int value)
+static int mt9m114_s_sat(struct v4l2_subdev *sd, s32 value)
 {
-  int ret = mt9m114_write(sd, REG_UVC_SATURATION, 2, value);
+  int ret = 0;
+  //if this uvc register is out of sync
+  if(mt9m114_uvc_register_is_out_of_sync(sd, UVC_SATURATION))
+  {//sync it
+    dprintk(0,"MT9M114","MT9M114 :REG_UVC_SATURATION out of sync. syncing...\n"); 
+    ret = mt9m114_sync_and_set_uvc_register_s32(sd, REG_UVC_SATURATION, 2, value);
+    mt9m114_set_uvc_register_synced(sd, UVC_SATURATION);
+  }
+  else
+  {//if the register is not out of sync: just set the value
+    ret = mt9m114_write(sd, REG_UVC_SATURATION, 2, value); 
+  }
+  
+  if(0 != ret)
+  {
+    dprintk(0,"MT9M114","MT9M114 : %s error writing value. errno: 0x%x\n", __func__, ret);
+    return ret;
+  }
+  
+  ret = check_uvc_status(sd, __func__);
+  if(0 != ret)
+  { //error has already been printed by check_uvc_status.
+    return ret;
+  }
+  
   mt9m114_refresh(sd);
+
   return ret;
+  
+
 }
 
-static int mt9m114_g_sat(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_sat(struct v4l2_subdev *sd, s32 *value)
 {
   u32 v = 0;
   int ret = mt9m114_read(sd, REG_UVC_SATURATION, 2, &v);
@@ -1723,20 +2106,21 @@ static int mt9m114_s_hue(struct v4l2_subdev *sd, int value)
 {
   int ret;
 
-  //ret = mt9m114_write(sd, REG_CAM_HUE_ANGLE, 2, (s16)value/10);
-  ret = mt9m114_write(sd, REG_UVC_HUE, 2, (s16)value*10);
+  ret = mt9m114_write(sd, REG_CAM_HUE_ANGLE, 1, (s8)value); //s8 cast is important to keep the sign
   mt9m114_refresh(sd);
+  
   return ret;
 }
 
-static int mt9m114_g_hue(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_hue(struct v4l2_subdev *sd, s32 *value)
 {
-  u32 v = 0;
-  int ret = mt9m114_read(sd, REG_UVC_HUE, 2, &v);
-
-  *value = v/10;
-
-  dprintk(1,"MT9M114","MT9M114 : mt9m114_g_hue 0x%x\n",v);
+  //FIXME there is a bug somewhere. If you set hue to -22 g_hue will return -9.
+  //      -21 will return -8 etc.
+  //      22 and 21 will return 8. 20 7 etc.
+  //      There seems to be some strange internal clamping?!
+  s8 v = 0;
+  int ret = mt9m114_read(sd, REG_UVC_HUE, 1, (u32*)&v);
+  *value = v;
   return ret;
 }
 
@@ -1744,14 +2128,38 @@ static int mt9m114_g_hue(struct v4l2_subdev *sd, __s32 *value)
 static int mt9m114_s_brightness(struct v4l2_subdev *sd, int value)
 {
   int ret = 0;
-  ret = mt9m114_write(sd, REG_UVC_BRIGHTNESS, 2, value>>2);
-  //mt9m114_write(sd, REG_CAM_AET_TARGET_AVG_LUMA, 2, value);
-
+  s32 shiftedValue = value>>2;
+  //if this uvc register is out of sync
+  if(mt9m114_uvc_register_is_out_of_sync(sd, UVC_BRIGHTNESS))
+  {//sync it
+    dprintk(0,"MT9M114","MT9M114 :REG_UVC_BRIGHTNESS out of sync. syncing...\n"); 
+    ret = mt9m114_sync_and_set_uvc_register_s32(sd, REG_UVC_BRIGHTNESS, 2, shiftedValue);
+    mt9m114_set_uvc_register_synced(sd, UVC_BRIGHTNESS);
+  }
+  else
+  {//if the register is not out of sync: just set the value
+    ret = mt9m114_write(sd, REG_UVC_BRIGHTNESS, 2, shiftedValue); 
+  }
+  
+  if(0 != ret)
+  {
+    dprintk(0,"MT9M114","MT9M114 : %s error writing value. errno: 0x%x\n", __func__, ret);
+    return ret;
+  }
+  
+  ret = check_uvc_status(sd, __func__);
+  if(0 != ret)
+  { //error has already been printed by check_uvc_status.
+    return ret;
+  }
+  
   mt9m114_refresh(sd);
+
   return ret;
+  
 }
 
-static int mt9m114_g_brightness(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_brightness(struct v4l2_subdev *sd, s32 *value)
 {
   u32 v = 0;
   int ret = mt9m114_read(sd, REG_UVC_BRIGHTNESS, 2, &v);
@@ -1763,12 +2171,38 @@ static int mt9m114_g_brightness(struct v4l2_subdev *sd, __s32 *value)
 
 static int mt9m114_s_contrast(struct v4l2_subdev *sd, int value)
 {
-  int ret = mt9m114_write(sd, REG_UVC_CONTRAST, 2, value);
+  int ret = 0;
+  //if this uvc register is out of sync
+  if(mt9m114_uvc_register_is_out_of_sync(sd, UVC_CONTRAST))
+  {//sync it
+    dprintk(0,"MT9M114","MT9M114 :REG_UVC_CONTRAST out of sync. syncing...\n"); 
+    ret = mt9m114_sync_and_set_uvc_register_s32(sd, REG_UVC_CONTRAST, 2, value);
+    mt9m114_set_uvc_register_synced(sd, UVC_CONTRAST);
+  }
+  else
+  {//if the register is not out of sync: just set the value
+    ret = mt9m114_write(sd, REG_UVC_CONTRAST, 2, value); 
+  }
+  
+  if(0 != ret)
+  {
+    dprintk(0,"MT9M114","MT9M114 : %s error writing value. errno: 0x%x\n", __func__, ret);
+    return ret;
+  }
+  
+  ret = check_uvc_status(sd, __func__);
+  if(0 != ret)
+  { //error has already been printed by check_uvc_status.
+    return ret;
+  }
+  
   mt9m114_refresh(sd);
+
   return ret;
+  
 }
 
-static int mt9m114_g_contrast(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_contrast(struct v4l2_subdev *sd, s32 *value)
 {
   u32 v = 0;
   int ret = mt9m114_read(sd, REG_UVC_CONTRAST, 2, &v);
@@ -1778,7 +2212,7 @@ static int mt9m114_g_contrast(struct v4l2_subdev *sd, __s32 *value)
 }
 
 
-static int mt9m114_g_hflip(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_hflip(struct v4l2_subdev *sd, s32 *value)
 {
   struct mt9m114_info *info = to_state(sd);
 
@@ -1789,14 +2223,14 @@ static int mt9m114_g_hflip(struct v4l2_subdev *sd, __s32 *value)
 static int mt9m114_s_hflip(struct v4l2_subdev *sd, int value)
 {
   struct mt9m114_info *info = to_state(sd);
-
+  
   info->flag_hflip = value;
   mt9m114_change_config(sd);
   return 0;
 }
 
 
-static int mt9m114_g_vflip(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_vflip(struct v4l2_subdev *sd, s32 *value)
 {
   struct mt9m114_info *info = to_state(sd);
 
@@ -1816,12 +2250,37 @@ static int mt9m114_s_vflip(struct v4l2_subdev *sd, int value)
 
 static int mt9m114_s_sharpness(struct v4l2_subdev *sd, int value)
 {
-  int ret = mt9m114_write(sd, REG_UVC_SHARPNESS, 2, value);
+  int ret = 0;
+  //if this uvc register is out of sync
+  if(mt9m114_uvc_register_is_out_of_sync(sd, UVC_SHARPNESS))
+  {//sync it
+    dprintk(0,"MT9M114","MT9M114 :REG_UVC_SHARPNESS out of sync. syncing...\n"); 
+    ret = mt9m114_sync_and_set_uvc_register_s32(sd, REG_UVC_SHARPNESS, 2, value);
+    mt9m114_set_uvc_register_synced(sd, UVC_SHARPNESS);
+  }
+  else
+  {//if the register is not out of sync: just set the value
+    ret = mt9m114_write(sd, REG_UVC_SHARPNESS, 2, value); 
+  }
+  
+  if(0 != ret)
+  {
+    dprintk(0,"MT9M114","MT9M114 : %s error writing value. errno: 0x%x\n", __func__, ret);
+    return ret;
+  }
+  
+  ret = check_uvc_status(sd, __func__);
+  if(0 != ret)
+  { //error has already been printed by check_uvc_status.
+    return ret;
+  }
+  
   mt9m114_refresh(sd);
+  
   return ret;
 }
 
-static int mt9m114_g_sharpness(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_sharpness(struct v4l2_subdev *sd, s32 *value)
 {
   u32 v = 0;
   int ret = mt9m114_read(sd, REG_UVC_SHARPNESS, 2, &v);
@@ -1834,24 +2293,23 @@ static int mt9m114_g_sharpness(struct v4l2_subdev *sd, __s32 *value)
 static int mt9m114_s_auto_white_balance(struct v4l2_subdev *sd, int value)
 {
   int ret = 0;
-
+  dprintk(0,"MT9M114","MT9M114 : mt9m114_s_auto_white_balance(value=%i)\n", value);
   if(value==0x01)
   {
-    mt9m114_write(sd, REG_AWB_AWB_MODE, 1, 0x02);
-    mt9m114_write(sd, REG_UVC_AUTO_WHITE_BALANCE_TEMPERATURE, 1, value);
+    //enable awb, disable auto exposure in between awb runs (this is the default)
+    ret = mt9m114_write(sd, REG_AWB_AWB_MODE, 1, 0x02);
   }
   else
   {
-    mt9m114_write(sd, REG_AWB_AWB_MODE, 1, 0x00);
-    mt9m114_write(sd, REG_UVC_AUTO_WHITE_BALANCE_TEMPERATURE, 1, value);
+    ret = mt9m114_write(sd, REG_AWB_AWB_MODE, 1, 0x00);
   }
-
+  
   mt9m114_refresh(sd);
 
   return ret;
 }
 
-static int mt9m114_g_auto_white_balance(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_auto_white_balance(struct v4l2_subdev *sd, s32 *value)
 {
   u32 v = 0;
   int ret = mt9m114_read(sd, REG_UVC_AUTO_WHITE_BALANCE_TEMPERATURE, 1, &v);
@@ -1868,7 +2326,7 @@ static int mt9m114_s_backlight_compensation(struct v4l2_subdev *sd, int value)
   return ret;
 }
 
-static int mt9m114_g_backlight_compensation(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_backlight_compensation(struct v4l2_subdev *sd, s32 *value)
 {
   u32 v = 0;
   int ret = mt9m114_read(sd, REG_UVC_BACKLIGHT_COMPENSATION, 2, &v);
@@ -1878,25 +2336,31 @@ static int mt9m114_g_backlight_compensation(struct v4l2_subdev *sd, __s32 *value
 }
 
 
+/**
+ * @note This will overwrite the values of UVC_FRAME_INTERVAL_CONTROL, UVC_EXPOSURE_TIME_ABSOLUTE_CONTROL
+ *       and UVC_GAIN_CONTROL
+ * @param sd
+ * @param value
+ * @return 
+ */
 static int mt9m114_s_auto_exposure(struct v4l2_subdev *sd, int value)
 {
   int ret = 0;
-  if(value==0x01)
+  if(value == 0x01)
   {
-    ret = mt9m114_write(sd, REG_UVC_MANUAL_EXPOSURE, 1, 0x00);
     ret = mt9m114_write(sd, REG_UVC_AE_MODE, 1, 0x02);
   }
   else
   {
     ret = mt9m114_write(sd, REG_UVC_AE_MODE, 1, 0x01);
-    ret = mt9m114_write(sd, REG_UVC_MANUAL_EXPOSURE, 1, 0x01);
+    
   }
 
   mt9m114_refresh(sd);
   return ret;
 }
 
-static int mt9m114_g_auto_exposure(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_auto_exposure(struct v4l2_subdev *sd, s32 *value)
 {
   u32 v = 0;
   int ret = mt9m114_read(sd, REG_UVC_AE_MODE, 1, &v);
@@ -1914,10 +2378,119 @@ static int mt9m114_g_auto_exposure(struct v4l2_subdev *sd, __s32 *value)
 }
 
 
-static int mt9m114_s_auto_exposure_algorithm(struct v4l2_subdev *sd, int value)
+static int mt9m114_s_gain(struct v4l2_subdev *sd, int value)
 {
   int ret = 0;
-    
+  //if this uvc register is out of sync
+  if(mt9m114_uvc_register_is_out_of_sync(sd, UVC_GAIN))
+  {//sync it
+    dprintk(0,"MT9M114","MT9M114 :REG_UVC_GAIN out of sync. syncing...\n"); 
+    ret = mt9m114_sync_and_set_uvc_register_s32(sd, REG_UVC_GAIN, 2, value);
+    mt9m114_set_uvc_register_synced(sd, UVC_GAIN);
+  }
+  else
+  {//if the register is not out of sync: just set the value
+    ret = mt9m114_write(sd, REG_UVC_GAIN, 2, value); 
+  }
+  
+  if(0 != ret)
+  {
+    dprintk(0,"MT9M114","MT9M114 : %s error writing value. errno: 0x%x\n", __func__, ret);
+    return ret;
+  }
+  
+  ret = check_uvc_status(sd, __func__);
+  if(0 != ret)
+  { //error has already been printed by check_uvc_status.
+    return ret;
+  }
+  
+  mt9m114_refresh(sd);
+
+  return ret;
+}
+
+static int mt9m114_g_gain(struct v4l2_subdev *sd, s32 *value)
+{
+  u32 v = 0;
+  int ret = mt9m114_read(sd, REG_UVC_GAIN, 2, &v);
+
+  *value = v;
+  return ret;
+}
+
+
+static int mt9m114_s_exposure(struct v4l2_subdev *sd, u32 value)
+{
+  int ret = 0;
+  u32 shiftedValue = value << 2;
+  //if this uvc register is out of sync
+  if(mt9m114_uvc_register_is_out_of_sync(sd, UVC_EXPOSURE_TIME))
+  {//sync it
+    dprintk(0,"MT9M114","MT9M114 :UVC_EXPOSURE_TIME out of sync. syncing...\n"); 
+    ret = mt9m114_sync_and_set_uvc_register_u32(sd, REG_UVC_EXPOSURE_TIME, 4, shiftedValue);
+    mt9m114_set_uvc_register_synced(sd, UVC_EXPOSURE_TIME);
+  }
+  else
+  {//if the register is not out of sync: just set the value
+    ret = mt9m114_write(sd, REG_UVC_EXPOSURE_TIME, 4, shiftedValue); 
+  }
+  
+  if(0 != ret)
+  {
+    dprintk(0,"MT9M114","MT9M114 : %s error writing value. errno: 0x%x\n", __func__, ret);
+    return ret;
+  }
+  
+  ret = check_uvc_status(sd, __func__);
+  if(0 != ret)
+  { //error has already been printed by check_uvc_status.
+    return ret;
+  }
+  
+  mt9m114_refresh(sd);
+
+  return ret;
+}
+
+static int mt9m114_g_exposure(struct v4l2_subdev *sd, s32 *value)
+{
+  u32 v = 0;
+  int ret = mt9m114_read(sd, REG_UVC_EXPOSURE_TIME, 4, &v);
+
+  *value = v>>2;
+
+  dprintk(0,"MT9M114","MT9M114 : mt9m114_g_exposure %x\n",v);
+
+  return ret;
+}
+
+
+static int mt9m114_s_white_balance(struct v4l2_subdev *sd, u32 value)
+{
+  int ret;
+
+  ret = mt9m114_write(sd, REG_AWB_COL_TEMP, 2, value);
+  
+  //FIXME read UVC_RESULT_STATUS to see if the value was ok.
+  
+  mt9m114_refresh(sd);
+  return ret;
+}
+
+static int mt9m114_g_white_balance(struct v4l2_subdev *sd, s32 *value)
+{
+  u32 v = 0;
+  int ret = mt9m114_read(sd, REG_AWB_COL_TEMP, 2, &v);
+
+  *value = v;
+  return ret;
+}
+
+
+static int mt9m114_s_auto_exposure_algorithm(struct v4l2_subdev *sd, int value)
+{ 
+  int ret = 0;
   if(value >= 0x0 && value <= 0x3)
   {
     ret = mt9m114_write(sd, REG_AE_ALGORITHM+1, 1, value);
@@ -1926,224 +2499,239 @@ static int mt9m114_s_auto_exposure_algorithm(struct v4l2_subdev *sd, int value)
   {
     return -EINVAL;
   }
-
   mt9m114_refresh(sd);
   return ret;
 }
 
-static int mt9m114_g_auto_exposure_algorithm(struct v4l2_subdev *sd, __s32 *value)
+static int mt9m114_g_auto_exposure_algorithm(struct v4l2_subdev *sd, s32 *value)
 {
   u32 v = 0;
   int ret = mt9m114_read(sd, REG_AE_ALGORITHM+1, 1, &v);
   *value = v & 0x3;
-  
-  return ret;
-}
-
-static int mt9m114_s_gain(struct v4l2_subdev *sd, int value)
-{
-  int ret = mt9m114_write(sd, REG_UVC_GAIN, 2, value);
-  mt9m114_refresh(sd);
-
-  return ret;
-}
-
-static int mt9m114_g_gain(struct v4l2_subdev *sd, __s32 *value)
-{
-  u32 v = 0;
-  int ret = mt9m114_read(sd, REG_UVC_GAIN, 2, &v);
-
-  *value = v;
-
-  return ret;
-}
-
-
-static int mt9m114_s_exposure(struct v4l2_subdev *sd, int value)
-{
-  int ret = mt9m114_write(sd, REG_UVC_EXPOSURE_TIME, 4, value<<2);
-  mt9m114_refresh(sd);
-  return ret;
-}
-
-static int mt9m114_g_exposure(struct v4l2_subdev *sd, __s32 *value)
-{
-  u32 v = 0;
-  int ret = mt9m114_read(sd, REG_UVC_EXPOSURE_TIME, 4, &v);
-
-  *value = v>>2;
-
-  dprintk(1,"MT9M114","MT9M114 : mt9m114_g_exposure_time 0x%x\n",v);
-
-  return ret;
-}
-
-
-static int mt9m114_s_white_balance(struct v4l2_subdev *sd, int value)
-{
-  int ret;
-
-  // format input value to range
-  value = (value+180)*45;
-
-  ret = mt9m114_write(sd, REG_UVC_WHITE_BALANCE_TEMPERATURE, 2, value);
-  mt9m114_refresh(sd);
-  return ret;
-}
-
-static int mt9m114_g_white_balance(struct v4l2_subdev *sd, __s32 *value)
-{
-  u32 v = 0;
-  int ret = 0;
-
-  mt9m114_refresh(sd);
-  ret = mt9m114_read(sd, REG_UVC_WHITE_BALANCE_TEMPERATURE, 2, &v);
-
-  *value = (v/45)-180;
   return ret;
 }
 
 
 static int mt9m114_cropcap(struct v4l2_subdev *sd, struct v4l2_cropcap *a)
 {
-  /*  a->bounds.left          = 0;
-      a->bounds.top           = 0;
-      a->bounds.width         =
-      mt9m114_resolutions[ARRAY_SIZE(mt9m114_resolutions)-1].width;
-      a->bounds.height        =
-      mt9m114_resolutions[ARRAY_SIZE(mt9m114_resolutions)-1].height;
-      a->defrect              = a->bounds;
-      a->type                 = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-      a->pixelaspect.numerator        = 1;
-      a->pixelaspect.denominator      = 1;*/
+  //FIXME not implemented
+  dprintk(0,"MT9M114","MT9M114 : %s not implemented\n",__func__);
+      /*  a->bounds.left          = 0;
+        a->bounds.top           = 0;
+        a->bounds.width         =
+                mt9m114_resolutions[ARRAY_SIZE(mt9m114_resolutions)-1].width;
+        a->bounds.height        =
+                mt9m114_resolutions[ARRAY_SIZE(mt9m114_resolutions)-1].height;
+        a->defrect              = a->bounds;
+        a->type                 = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        a->pixelaspect.numerator        = 1;
+        a->pixelaspect.denominator      = 1;*/
 
-  return 0;
+        return 0;
 }
 
 static int mt9m114_g_crop(struct v4l2_subdev *sd, struct v4l2_crop *a)
 {
-  /*   a->c.left               = 0;
-       a->c.top                = 0;
-       a->c.width              =
-       mt9m114_resolutions[ARRAY_SIZE(mt9m114_resolutions)-1].width;
-       a->c.height             =
-       mt9m114_resolutions[ARRAY_SIZE(mt9m114_resolutions)-1].height;
-       a->type                 = V4L2_BUF_TYPE_VIDEO_CAPTURE;*/
+  //FIXME not implemented
+  dprintk(0,"MT9M114","MT9M114 : %s not implemented\n",__func__);
+     /*   a->c.left               = 0;
+        a->c.top                = 0;
+        a->c.width              =
+                mt9m114_resolutions[ARRAY_SIZE(mt9m114_resolutions)-1].width;
+        a->c.height             =
+                mt9m114_resolutions[ARRAY_SIZE(mt9m114_resolutions)-1].height;
+        a->type                 = V4L2_BUF_TYPE_VIDEO_CAPTURE;*/
 
-  return 0;
+        return 0;
 }
 
+
+
+static int mt9m114_g_fade_to_black(struct v4l2_subdev *sd, s32 *value)
+{  
+  u32 v = 0;
+  
+  int ret = mt9m114_read(sd, REG_CAM_LL_MODE, 2, &v);
+  *value = v;
+  return ret;
+}
+
+static int mt9m114_s_fade_to_black(struct v4l2_subdev *sd, int value)
+{
+  s32 currentValue = 0;
+  
+  int ret = mt9m114_g_fade_to_black(sd, &currentValue);
+  if (ret == 0)
+  {
+    if(value != 0)
+    {
+      currentValue |= (1 << 3);
+    }
+    else
+    {
+      currentValue &= (0 << 3);
+    }
+    
+    ret = mt9m114_write(sd, REG_CAM_LL_MODE, 2, currentValue);
+  }
+  else
+  {
+      dprintk(0,"MT9M114","MT9M114 : %s Failed to get value\n", __func__);
+  }
+  
+  mt9m114_refresh(sd);
+  return ret;
+  
+}
+
+
+/**
+ * Is called by an application to ask which control commands are supported.
+ * 
+ * @param sd
+ * @param qc
+ * @return Returns EINVAL if the specified control is not supported. Otherwise returns 0 and fills 
+ *         qc.
+ */
 static int mt9m114_queryctrl(struct v4l2_subdev *sd,
     struct v4l2_queryctrl *qc)
 {
-  dprintk(1,"MT9M114","MT9M114 : mt9m114_queryctrl id: 0x%x\n", qc->id);
+  dprintk(0,"MT9M114","MT9M114 : %s id:%x\n",__func__, qc->id);
 
   /* Fill in min, max, step and default value for these controls. */
   switch (qc->id) {
-    case V4L2_CID_BRIGHTNESS:
-      return v4l2_ctrl_query_fill(qc, 0, 255, 1, 55);
-    case V4L2_CID_CONTRAST:
-      return v4l2_ctrl_query_fill(qc, 0, 127, 1, 32);
-    case V4L2_CID_SATURATION:
-      return v4l2_ctrl_query_fill(qc, 0, 255, 1, 128);
-    case V4L2_CID_HUE:
-      return v4l2_ctrl_query_fill(qc, -180, 180, 1, 0);
-    case V4L2_CID_VFLIP:
-    case V4L2_CID_HFLIP:
-      return v4l2_ctrl_query_fill(qc, 0, 1, 1, 0);
-    case V4L2_CID_SHARPNESS:
-      return v4l2_ctrl_query_fill(qc, -7, 7, 1, 0);
-    case V4L2_CID_EXPOSURE_AUTO:
-      return v4l2_ctrl_query_fill(qc, 0, 1, 1, 1);
-    case V4L2_CID_EXPOSURE_ALGORITHM:
-      return v4l2_ctrl_query_fill(qc, 0, 3, 1, 1);
-    case V4L2_CID_AUTO_WHITE_BALANCE:
-      return v4l2_ctrl_query_fill(qc, 0, 1, 1, 1);
-    case V4L2_CID_GAIN:
-      return v4l2_ctrl_query_fill(qc, 0, 255, 1, 32);
-    case V4L2_CID_EXPOSURE:
-      return v4l2_ctrl_query_fill(qc, 0, 512, 1, 0);
-    case V4L2_CID_DO_WHITE_BALANCE:
-      return v4l2_ctrl_query_fill(qc, -180, 180, 1, -166);
-    case V4L2_CID_BACKLIGHT_COMPENSATION:
-      return v4l2_ctrl_query_fill(qc, 0, 4, 1, 1);
+  case V4L2_CID_BRIGHTNESS:
+    return v4l2_ctrl_query_fill(qc, 0, 255, 1, 55);
+  case V4L2_CID_CONTRAST:
+    return v4l2_ctrl_query_fill(qc, 16, 64, 1, 32);
+  case V4L2_CID_SATURATION:
+    return v4l2_ctrl_query_fill(qc, 0, 255, 1, 128);
+  case V4L2_CID_HUE:
+    return v4l2_ctrl_query_fill(qc, -22, 22, 1, 0);
+  case V4L2_CID_VFLIP:
+  case V4L2_CID_HFLIP:
+    return v4l2_ctrl_query_fill(qc, 0, 1, 1, 0);
+  case V4L2_CID_SHARPNESS:
+    return v4l2_ctrl_query_fill(qc, -7, 7, 1, 0);
+  case V4L2_CID_EXPOSURE_AUTO:
+    return v4l2_ctrl_query_fill(qc, 0, 1, 1, 1);
+  case V4L2_CID_EXPOSURE_ALGORITHM:
+ 	  return v4l2_ctrl_query_fill(qc, 0, 3, 1, 1);
+  case V4L2_CID_AUTO_WHITE_BALANCE:
+    return v4l2_ctrl_query_fill(qc, 0, 1, 1, 1);
+  case V4L2_CID_GAIN:
+    return v4l2_ctrl_query_fill(qc, 0, 255, 1, 32);
+  case V4L2_CID_EXPOSURE:
+    return v4l2_ctrl_query_fill(qc, 0, 512, 1, 0);
+  case V4L2_CID_DO_WHITE_BALANCE:
+    return v4l2_ctrl_query_fill(qc, 0x0A8C, 0x1964, 1, 0x1964);
+  case V4L2_CID_BACKLIGHT_COMPENSATION:
+    return v4l2_ctrl_query_fill(qc, 0, 4, 1, 1);
+  case V4L2_MT9M114_FADE_TO_BLACK:
+      qc->minimum = 0;
+      qc->maximum = 1;
+      qc->step = 1;
+      qc->default_value = 1;
+      qc->reserved[0] = qc->reserved[1] = 0;
+      strcpy(qc->name, "Fade to Black");
+      qc->type = V4L2_CTRL_TYPE_BOOLEAN;
+      qc->flags = 0;
+    return 0;  
   }
+  
   return -EINVAL;
 }
 
 static int mt9m114_g_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
-  dprintk(1,"MT9M114","MT9M114 : mt9m114_g_ctrl id: 0x%x\n", ctrl->id);
-
   switch (ctrl->id) {
-    case V4L2_CID_BRIGHTNESS:
-      return mt9m114_g_brightness(sd, &ctrl->value);
-    case V4L2_CID_CONTRAST:
-      return mt9m114_g_contrast(sd, &ctrl->value);
-    case V4L2_CID_SATURATION:
-      return mt9m114_g_sat(sd, &ctrl->value);
-    case V4L2_CID_HUE:
-      return mt9m114_g_hue(sd, &ctrl->value);
-    case V4L2_CID_VFLIP:
-      return mt9m114_g_vflip(sd, &ctrl->value);
-    case V4L2_CID_HFLIP:
-      return mt9m114_g_hflip(sd, &ctrl->value);
-    case V4L2_CID_SHARPNESS:
-      return mt9m114_g_sharpness(sd, &ctrl->value);
-    case V4L2_CID_EXPOSURE_AUTO:
-      return mt9m114_g_auto_exposure(sd, &ctrl->value);
-    case V4L2_CID_EXPOSURE_ALGORITHM:
-      return mt9m114_g_auto_exposure_algorithm(sd, &ctrl->value);
-    case V4L2_CID_AUTO_WHITE_BALANCE:
-      return mt9m114_g_auto_white_balance(sd, &ctrl->value);
-    case V4L2_CID_GAIN:
-      return mt9m114_g_gain(sd, &ctrl->value);
-    case V4L2_CID_EXPOSURE:
-      return mt9m114_g_exposure(sd, &ctrl->value);
-    case V4L2_CID_DO_WHITE_BALANCE:
-      return mt9m114_g_white_balance(sd, &ctrl->value);
-    case V4L2_CID_BACKLIGHT_COMPENSATION:
-      return mt9m114_g_backlight_compensation(sd, &ctrl->value);
+  case V4L2_CID_BRIGHTNESS:
+    return mt9m114_g_brightness(sd, &ctrl->value);
+  case V4L2_CID_CONTRAST:
+    return mt9m114_g_contrast(sd, &ctrl->value);
+  case V4L2_CID_SATURATION:
+    return mt9m114_g_sat(sd, &ctrl->value);
+  case V4L2_CID_HUE:
+    return mt9m114_g_hue(sd, &ctrl->value);
+  case V4L2_CID_VFLIP:
+    return mt9m114_g_vflip(sd, &ctrl->value);
+  case V4L2_CID_HFLIP:
+    return mt9m114_g_hflip(sd, &ctrl->value);
+  case V4L2_CID_SHARPNESS:
+    return mt9m114_g_sharpness(sd, &ctrl->value);
+  case V4L2_CID_EXPOSURE_AUTO:
+    return mt9m114_g_auto_exposure(sd, &ctrl->value);
+  case V4L2_CID_EXPOSURE_ALGORITHM:
+ 	  return mt9m114_g_auto_exposure_algorithm(sd, &ctrl->value);
+  case V4L2_CID_AUTO_WHITE_BALANCE:
+    return mt9m114_g_auto_white_balance(sd, &ctrl->value);
+  case V4L2_CID_GAIN:
+    return mt9m114_g_gain(sd, &ctrl->value);
+  case V4L2_CID_EXPOSURE:
+    return mt9m114_g_exposure(sd, &ctrl->value);
+  case V4L2_CID_DO_WHITE_BALANCE:
+    return mt9m114_g_white_balance(sd, &ctrl->value);
+  case V4L2_CID_BACKLIGHT_COMPENSATION:
+    return mt9m114_g_backlight_compensation(sd, &ctrl->value);
+  case V4L2_MT9M114_FADE_TO_BLACK:
+    return mt9m114_g_fade_to_black(sd, &ctrl->value);
   }
   return -EINVAL;
 }
 
 static int mt9m114_s_ctrl(struct v4l2_subdev *sd, struct v4l2_control *ctrl)
 {
-  dprintk(1,"MT9M114","MT9M114 : mt9m114_s_ctrl id: 0x%x value: 0x%x\n", ctrl->id, ctrl->value);
-
   switch (ctrl->id) {
-    case V4L2_CID_BRIGHTNESS:
-      return mt9m114_s_brightness(sd, ctrl->value);
-    case V4L2_CID_CONTRAST:
-      return mt9m114_s_contrast(sd, ctrl->value);
-    case V4L2_CID_SATURATION:
-      return mt9m114_s_sat(sd, ctrl->value);
-    case V4L2_CID_HUE:
-      return mt9m114_s_hue(sd, ctrl->value);
-    case V4L2_CID_VFLIP:
-      return mt9m114_s_vflip(sd, ctrl->value);
-    case V4L2_CID_HFLIP:
-      return mt9m114_s_hflip(sd, ctrl->value);
-    case V4L2_CID_SHARPNESS:
-      return mt9m114_s_sharpness(sd, ctrl->value);
-    case V4L2_CID_EXPOSURE_AUTO:
-      return mt9m114_s_auto_exposure(sd, ctrl->value);
-    case V4L2_CID_EXPOSURE_ALGORITHM:
-      return mt9m114_s_auto_exposure_algorithm(sd, ctrl->value);
-    case V4L2_CID_AUTO_WHITE_BALANCE:
-      return mt9m114_s_auto_white_balance(sd, ctrl->value);
-    case V4L2_CID_GAIN:
-      return mt9m114_s_gain(sd, ctrl->value);
-    case V4L2_CID_EXPOSURE:
-      return mt9m114_s_exposure(sd, ctrl->value);
-    case V4L2_CID_DO_WHITE_BALANCE:
-      return mt9m114_s_white_balance(sd, ctrl->value);
-    case V4L2_CID_BACKLIGHT_COMPENSATION:
-      return mt9m114_s_backlight_compensation(sd, ctrl->value);
+  case V4L2_CID_BRIGHTNESS:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_BRIGHTNESS 0x%x\n", ctrl->value);
+    return mt9m114_s_brightness(sd, ctrl->value);
+  case V4L2_CID_CONTRAST:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_CONTRAST 0x%x\n", ctrl->value);
+    return mt9m114_s_contrast(sd, ctrl->value);
+  case V4L2_CID_SATURATION:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_SATURATION 0x%x\n", ctrl->value);
+    return mt9m114_s_sat(sd, ctrl->value);
+  case V4L2_CID_HUE:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_HUE 0x%x\n", ctrl->value);
+    return mt9m114_s_hue(sd, ctrl->value);
+  case V4L2_CID_VFLIP:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_VFLIP 0x%x\n", ctrl->value);
+    return mt9m114_s_vflip(sd, ctrl->value);
+  case V4L2_CID_HFLIP:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_HFLIP 0x%x\n", ctrl->value);
+    return mt9m114_s_hflip(sd, ctrl->value);
+  case V4L2_CID_SHARPNESS:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_SHARPNESS 0x%x\n", ctrl->value);
+    return mt9m114_s_sharpness(sd, ctrl->value);
+  case V4L2_CID_EXPOSURE_AUTO:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_EXPOSURE_AUTO 0x%x\n", ctrl->value);
+    return mt9m114_s_auto_exposure(sd, ctrl->value);
+  case V4L2_CID_EXPOSURE_ALGORITHM:
+ 	  return mt9m114_s_auto_exposure_algorithm(sd, ctrl->value);
+  case V4L2_CID_AUTO_WHITE_BALANCE:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_AUTO_WHITE_BALANCE 0x%x\n", ctrl->value);
+    return mt9m114_s_auto_white_balance(sd, ctrl->value);
+  case V4L2_CID_GAIN:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_GAIN 0x%x\n", ctrl->value);
+    return mt9m114_s_gain(sd, ctrl->value);
+  case V4L2_CID_EXPOSURE:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_EXPOSURE 0x%x\n", ctrl->value);
+    return mt9m114_s_exposure(sd, ctrl->value);
+  case V4L2_CID_DO_WHITE_BALANCE:
+    dprintk(0,"MT9M114","MT9M114 :set  id: V4L2_CID_DO_WHITE_BALANCE 0x%x\n", ctrl->value);
+    return mt9m114_s_white_balance(sd, ctrl->value);
+  case V4L2_CID_BACKLIGHT_COMPENSATION:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_CID_BACKLIGHT_COMPENSATION 0x%x\n", ctrl->value);
+    return mt9m114_s_backlight_compensation(sd, ctrl->value);
+  case V4L2_MT9M114_FADE_TO_BLACK:
+    dprintk(0,"MT9M114","MT9M114 :set id: V4L2_MT9M114_FADE_TO_BLACK 0x%x\n", ctrl->value);
+    return mt9m114_s_fade_to_black(sd, ctrl->value); 
+  default:
+    dprintk(0,"MT9M114","MT9M114 :set id: ERROR DEFAULT CASE0x%x\n", ctrl->value);
   }
   return -EINVAL;
 }
+
 
 static int mt9m114_g_chip_ident(struct v4l2_subdev *sd,
     struct v4l2_dbg_chip_ident *chip)
@@ -2154,38 +2742,6 @@ static int mt9m114_g_chip_ident(struct v4l2_subdev *sd,
 }
 
 
-#ifdef CONFIG_VIDEO_ADV_DEBUG
-static int mt9m114_g_register(struct v4l2_subdev *sd, struct v4l2_dbg_register *reg)
-{
-  int ret = 0;
-
-  u16 addr = reg->reg & 0xffff;
-  u16 size = 1;
-  u32 val = 0;
-  
-  ret = mt9m114_read(sd, addr, size, &val);
-  reg->val = val;
-  
-  dprintk(1,"MT9M114","MT9M114: mt9m114_g_register addr: 0x%x, size: %d, value: 0x%x\n", addr, size, val);
-
-  return ret;
-}
-
-static int mt9m114_s_register(struct v4l2_subdev *sd, struct v4l2_dbg_register *reg)
-{
-  int ret = 0;
-  
-  u16 addr = reg->reg & 0xffff;
-  u16 size = 1;
-  u32 val = reg->val & 0xff;
-  
-  dprintk(1,"MT9M114","MT9M114: mt9m114_s_register addr: 0x%x, size: %d, val: 0x%x\n", addr, size, val);
-  
-  ret = mt9m114_write(sd, addr, size, val); 
-  mt9m114_refresh(sd);
-  return ret;
-}
-#endif
 
 /* ----------------------------------------------------------------------- */
 
@@ -2220,7 +2776,7 @@ static const struct v4l2_subdev_ops mt9m114_ops = {
 /* ----------------------------------------------------------------------- */
 
 static int mt9m114_probe(struct i2c_client *client,
-    const struct i2c_device_id *id)
+      const struct i2c_device_id *id)
 {
   struct v4l2_subdev *sd;
   struct mt9m114_info *info;
@@ -2236,8 +2792,8 @@ static int mt9m114_probe(struct i2c_client *client,
   ret = mt9m114_detect(sd);
   if (ret) {
     v4l_dbg(1, debug, client,
-        "chip found @ 0x%x (%s) is not an mt9m114 chip.\n",
-        client->addr , client->adapter->name);
+      "chip found @ 0x%x (%s) is not an mt9m114 chip.\n",
+      client->addr , client->adapter->name);
     kfree(info);
     return ret;
   }

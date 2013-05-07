@@ -2,6 +2,9 @@
 # Makefile for the Linux Wireless network device drivers.
 #
 
+# B-Human alternative driver for rt2800usb
+obj-$(CONFIG_RT5370STA) += rt5370sta/os/linux/
+
 obj-$(CONFIG_IPW2100) += ipw2x00/
 obj-$(CONFIG_IPW2200) += ipw2x00/
 
